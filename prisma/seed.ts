@@ -130,7 +130,33 @@ async function main() {
   const hashedPassword = await bcrypt.hash('admin123', 10)
   const admin = await prisma.user.upsert({
     where: { email: 'admin@rfb.com' },
-    update: {},
+    update: {
+      password: hashedPassword, // Update password if user exists
+      accessControl: {
+        upsert: {
+          create: {
+            canViewDashboard: true,
+            canManageItems: true,
+            canManagePurchase: true,
+            canManageRecipe: true,
+            canManageProduction: true,
+            canViewReports: true,
+            canManageUsers: true,
+            canManageSettings: true,
+          },
+          update: {
+            canViewDashboard: true,
+            canManageItems: true,
+            canManagePurchase: true,
+            canManageRecipe: true,
+            canManageProduction: true,
+            canViewReports: true,
+            canManageUsers: true,
+            canManageSettings: true,
+          },
+        },
+      },
+    },
     create: {
       email: 'admin@rfb.com',
       name: 'Admin User',
