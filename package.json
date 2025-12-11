@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3002",
-    "build": "prisma generate && node scripts/resolve-migrations.js && next build",
+    "build": "prisma generate && prisma migrate deploy && npm run prisma:seed && next build",
+    "build:railway": "node scripts/switch-to-postgres.js && prisma generate && prisma migrate deploy && npm run prisma:seed && next build",
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
@@ -13,7 +14,8 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "tsx prisma/seed.ts",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "railway:prepare": "node scripts/switch-to-postgres.js && npx prisma generate"
   },
   "dependencies": {
     "@prisma/client": "^5.7.1",
