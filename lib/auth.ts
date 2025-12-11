@@ -4,6 +4,8 @@ import { prisma } from './prisma'
 import bcrypt from 'bcryptjs'
 
 export const authOptions: NextAuthOptions = {
+  // Use environment variable or fallback to placeholder during build
+  secret: process.env.NEXTAUTH_SECRET || 'temporary-secret-for-build',
   providers: [
     CredentialsProvider({
       name: 'Credentials',
