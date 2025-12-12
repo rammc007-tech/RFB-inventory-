@@ -1,0 +1,13 @@
+{
+  "build": {
+    "type": "docker",
+    "dockerfile": "Dockerfile",
+    "context": ".",
+    "args": {}
+  },
+  "run": {
+    "cmd": ["npm", "start"],
+    "env": "production"
+  }
+}
+
