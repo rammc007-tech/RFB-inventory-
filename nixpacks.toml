@@ -1,0 +1,12 @@
+# Nixpacks configuration for Railway
+# Force npm instead of pnpm
+
+[phases.setup]
+nixPkgs = ["nodejs-18_x"]
+
+[phases.install]
+cmds = ["npm ci --prefer-offline --no-audit || npm install --prefer-offline --no-audit"]
+
+[phases.build]
+cmds = ["bash scripts/railway-build.sh"]
+
