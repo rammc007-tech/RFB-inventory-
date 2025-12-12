@@ -12,6 +12,33 @@ interface PrintButtonProps {
     data: any[]
     filename?: string
     showDate?: boolean
+    extra?: {
+      dailyTotals?: { date: string; total: string }[]
+      monthlyTotals?: { month: string; total: string }[]
+      grandTotal?: string
+      recipeDetails?: Array<{
+        recipeName: string
+        description: string
+        yield: string
+        ingredients: Array<{ itemName: string; quantity: string; unit: string }>
+      }>
+      detailedBreakdown?: Array<{
+        recipeName: string
+        date: string
+        quantity: string
+        ingredients: Array<{ itemName: string; quantity: string; unitCost: string; total: string }>
+        laborCost: string
+        overheadCost: string
+        totalCost: string
+        costPerUnit: string
+      }>
+      summary?: {
+        totalProductions: number
+        totalQuantity: string
+        totalCost: string
+        averageCostPerUnit: string
+      }
+    }
   }
   className?: string
 }

@@ -105,6 +105,7 @@ export default function ProductionCostReportPage() {
 
   const totalCost = filteredProductions.reduce((sum, p) => sum + p.totalCost, 0)
   const totalProduced = filteredProductions.reduce((sum, p) => sum + p.producedQuantity, 0)
+  const averageCostPerUnit = totalProduced > 0 ? totalCost / totalProduced : 0
 
   return (
     <DashboardLayout>
@@ -140,25 +141,28 @@ export default function ProductionCostReportPage() {
                 })),
                 filename: 'production-cost-report',
                 showDate: true,
-                detailedBreakdown: filteredProductions.map((production) => ({
-                  recipeName: production.recipe.name,
-                  date: formatDate(production.date),
-                  quantity: `${production.producedQuantity} ${production.producedUnit.symbol}`,
-                  ingredients: production.items.map((item) => ({
-                    itemName: item.item.name,
-                    quantity: `${item.quantity.toFixed(2)} ${item.unit.symbol}`,
-                    unitCost: formatCurrency(item.unitCost),
-                    total: formatCurrency(item.lineTotal),
+                extra: {
+                  detailedBreakdown: filteredProductions.map((production) => ({
+                    recipeName: production.recipe.name,
+                    date: formatDate(production.date),
+                    quantity: `${production.producedQuantity} ${production.producedUnit.symbol}`,
+                    ingredients: production.items.map((item) => ({
+                      itemName: item.item.name,
+                      quantity: `${item.quantity.toFixed(2)} ${item.unit.symbol}`,
+                      unitCost: formatCurrency(item.unitCost),
+                      total: formatCurrency(item.lineTotal),
+                    })),
+                    laborCost: formatCurrency(production.laborCost),
+                    overheadCost: formatCurrency(production.overheadCost),
+                    totalCost: formatCurrency(production.totalCost),
+                    costPerUnit: formatCurrency(production.costPerUnit),
                   })),
-                  laborCost: formatCurrency(production.laborCost),
-                  overheadCost: formatCurrency(production.overheadCost),
-                  totalCost: formatCurrency(production.totalCost),
-                  costPerUnit: formatCurrency(production.costPerUnit),
-                })),
-                summary: {
-                  totalProductions: filteredProductions.length,
-                  totalQuantity: totalProduced.toFixed(2),
-                  totalCost: formatCurrency(totalCost),
+                  summary: {
+                    totalProductions: filteredProductions.length,
+                    totalQuantity: totalProduced.toFixed(2),
+                    totalCost: formatCurrency(totalCost),
+                    averageCostPerUnit: formatCurrency(averageCostPerUnit),
+                  },
                 },
               }}
             />

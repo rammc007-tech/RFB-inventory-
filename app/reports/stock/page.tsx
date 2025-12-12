@@ -148,17 +148,19 @@ export default function StockReportPage() {
                 location: item.location || '-',
               })),
               filename: 'stock-report',
-              dailyTotals: [
-                {
-                  date: 'Raw Material Total',
-                  total: formatCurrency(rawMaterialTotal),
-                },
-                {
-                  date: 'Essence Total',
-                  total: formatCurrency(essenceTotal),
-                },
-              ],
-              grandTotal: formatCurrency(totalValue),
+              extra: {
+                dailyTotals: [
+                  {
+                    date: 'Raw Material Total',
+                    total: formatCurrency(rawMaterialTotal),
+                  },
+                  {
+                    date: 'Essence Total',
+                    total: formatCurrency(essenceTotal),
+                  },
+                ],
+                grandTotal: formatCurrency(totalValue),
+              },
             }}
           />
         </div>

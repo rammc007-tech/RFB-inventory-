@@ -23,7 +23,7 @@ export const authOptions: NextAuthOptions = {
           include: { accessControl: true },
         })
 
-        if (!user) {
+        if (!user || !user.email) {
           return null
         }
 

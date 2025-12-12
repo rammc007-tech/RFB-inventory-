@@ -33,6 +33,7 @@ export interface PDFOptions {
     totalProductions?: number
     totalQuantity?: string
     totalCost?: string
+    averageCostPerUnit?: string
   }
   dailyTotals?: Array<{
     date: string
@@ -249,7 +250,7 @@ export async function generatePDF(options: PDFOptions): Promise<Buffer> {
             yPosition = ingY + 25
             
             // Add separator line between recipes
-            if (recipeIndex < options.recipeDetails.length - 1) {
+            if (options.recipeDetails && recipeIndex < options.recipeDetails.length - 1) {
               doc.strokeColor('#CCCCCC')
               doc.moveTo(50, yPosition)
               doc.lineTo(545, yPosition)
@@ -279,12 +280,16 @@ export async function generatePDF(options: PDFOptions): Promise<Buffer> {
             doc.text(`Total Productions: ${options.summary.totalProductions}`, 50, summaryY)
             doc.text(`Total Quantity: ${options.summary.totalQuantity}`, 200, summaryY)
             // Replace ₹ with Rs. for PDFKit compatibility
-            doc.text(`Total Cost: ${replaceRupeeSymbol(options.summary.totalCost)}`, 350, summaryY)
+            doc.text(`Total Cost: ${replaceRupeeSymbol(options.summary.totalCost || '0')}`, 350, summaryY)
+            if (options.summary.averageCostPerUnit) {
+              doc.text(`Average Cost/Unit: ${replaceRupeeSymbol(options.summary.averageCostPerUnit)}`, 350, summaryY + 15)
+            }
             yPosition += 30
           }
           
           // Detailed Breakdown for each production
-          options.detailedBreakdown.forEach((production, prodIndex) => {
+          if (options.detailedBreakdown) {
+            options.detailedBreakdown.forEach((production, prodIndex) => {
             // Check if we need a new page
             if (yPosition > 700) {
               doc.addPage()
@@ -387,7 +392,7 @@ export async function generatePDF(options: PDFOptions): Promise<Buffer> {
             yPosition += 30
             
             // Add separator line between productions
-            if (prodIndex < options.detailedBreakdown.length - 1) {
+            if (options.detailedBreakdown && prodIndex < options.detailedBreakdown.length - 1) {
               doc.strokeColor('#CCCCCC')
               doc.moveTo(50, yPosition)
               doc.lineTo(545, yPosition)
@@ -396,6 +401,7 @@ export async function generatePDF(options: PDFOptions): Promise<Buffer> {
               yPosition += 20
             }
           })
+          }
           
           doc.end()
           return

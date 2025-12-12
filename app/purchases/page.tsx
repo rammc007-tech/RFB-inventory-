@@ -209,23 +209,25 @@ export default function PurchasesPage() {
                   totalAmount: formatCurrency(purchase.totalAmount),
                 })),
                 filename: selectedDate ? `purchases-${selectedDate}` : 'purchases',
-                dailyTotals: Object.entries(dailyTotals)
-                  .sort(([a], [b]) => b.localeCompare(a))
-                  .map(([date, total]) => ({
-                    date: formatDate(date),
-                    total: formatCurrency(total),
-                  })),
-                monthlyTotals: Object.entries(monthlyTotals)
-                  .sort(([a], [b]) => b.localeCompare(a))
-                  .map(([month, total]) => {
-                    const [year, monthNum] = month.split('-')
-                    const monthName = new Date(parseInt(year), parseInt(monthNum) - 1).toLocaleString('en-IN', { month: 'long', year: 'numeric' })
-                    return {
-                      month: monthName,
+                extra: {
+                  dailyTotals: Object.entries(dailyTotals)
+                    .sort(([a], [b]) => b.localeCompare(a))
+                    .map(([date, total]) => ({
+                      date: formatDate(date),
                       total: formatCurrency(total),
-                    }
-                  }),
-                grandTotal: formatCurrency(grandTotal),
+                    })),
+                  monthlyTotals: Object.entries(monthlyTotals)
+                    .sort(([a], [b]) => b.localeCompare(a))
+                    .map(([month, total]) => {
+                      const [year, monthNum] = month.split('-')
+                      const monthName = new Date(parseInt(year), parseInt(monthNum) - 1).toLocaleString('en-IN', { month: 'long', year: 'numeric' })
+                      return {
+                        month: monthName,
+                        total: formatCurrency(total),
+                      }
+                    }),
+                  grandTotal: formatCurrency(grandTotal),
+                }
               }}
             />
             <Link

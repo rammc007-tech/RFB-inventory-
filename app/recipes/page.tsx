@@ -118,16 +118,18 @@ export default function RecipesPage() {
                 columns: [],
                 data: [],
                 filename: 'recipes',
-                recipeDetails: filteredRecipes.map((recipe) => ({
-                  recipeName: recipe.name,
-                  description: recipe.description || '-',
-                  yield: `${recipe.yieldQuantity} ${recipe.yieldUnit.symbol}`,
-                  ingredients: recipe.ingredients.map((ing) => ({
-                    itemName: ing.item.name,
-                    quantity: ing.quantity.toString(),
-                    unit: ing.unit.symbol,
+                extra: {
+                  recipeDetails: filteredRecipes.map((recipe) => ({
+                    recipeName: recipe.name,
+                    description: recipe.description || '-',
+                    yield: `${recipe.yieldQuantity} ${recipe.yieldUnit.symbol}`,
+                    ingredients: recipe.ingredients.map((ing) => ({
+                      itemName: ing.item.name,
+                      quantity: ing.quantity.toString(),
+                      unit: ing.unit.symbol,
+                    })),
                   })),
-                })),
+                },
               }}
             />
             <Link
