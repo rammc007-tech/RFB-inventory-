@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    // Accept healthcheck from Railway hostname
+    const hostname = request.headers.get('host') || ''
+    
     // Simple health check - verify database connection
     await prisma.$queryRaw`SELECT 1`
     
@@ -15,6 +18,7 @@ export async function GET() {
       { status: 200 }
     )
   } catch (error) {
+    // Return 503 for unhealthy status (Railway will retry)
     return NextResponse.json(
       { 
         status: 'unhealthy',

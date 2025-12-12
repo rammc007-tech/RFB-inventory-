@@ -41,5 +41,6 @@ fi
 
 # Step 3: Start Next.js application
 log "🚀 Starting Next.js application..."
+log "ℹ️  Next.js will listen on PORT=${PORT:-3000} (Railway provides PORT)"
 exec next start
 
