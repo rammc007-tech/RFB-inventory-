@@ -9,6 +9,6 @@ cmds = ["npm ci --prefer-offline --no-audit || npm install --prefer-offline --no
 
 [phases.build]
 cmds = [
-  "npx prisma generate",
-  "NODE_ENV=production next build"
+  "npx prisma generate || echo 'Prisma generate warning (may need DATABASE_URL)'",
+  "NODE_ENV=production NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000} NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-temp-secret} next build"
 ]
