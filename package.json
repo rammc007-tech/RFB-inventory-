@@ -7,6 +7,7 @@
     "build": "npx prisma generate && NODE_ENV=production next build",
     "build:railway": "bash scripts/railway-build.sh",
     "start": "next start",
+    "start:safe": "set +e; next start || (echo 'App failed to start, retrying...' && sleep 5 && next start)",
     "lint": "next lint",
     "test": "jest",
     "test:watch": "jest --watch",
