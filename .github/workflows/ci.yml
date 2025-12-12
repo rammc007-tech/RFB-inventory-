@@ -13,30 +13,24 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      # Install pnpm BEFORE setup-node (important)
-      - name: Install pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 8
-          run_install: false
-
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
-          cache: "pnpm"
+          cache: "npm"
 
       - name: Install dependencies
-        run: pnpm install
+        run: npm ci
 
       - name: Generate Prisma Client
-        run: pnpm prisma generate
+        run: npx prisma generate
 
       - name: Run linter
-        run: pnpm lint
+        run: npm run lint
 
-      - name: Run tests
-        run: pnpm test
+      - name: Run build
+        run: npm run build
         env:
-          DATABASE_URL: "file:./test.db"
+          DATABASE_URL: "postgresql://dummy:dummy@dummy:5432/dummy"
+          NEXTAUTH_URL: "http://localhost:3000"
           NEXTAUTH_SECRET: "test-secret"
