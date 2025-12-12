@@ -6,9 +6,9 @@ RUN npm set cache /tmp/empty-cache --global
 RUN npm ci --prefer-offline --no-audit --no-fund
 
 COPY . .
+
 RUN npx prisma generate
-RUN --mount=type=cache,id=nextjs-cache,target=/app/.next/cache \
-    npm run build
+RUN npm run build   # ❗ cache mount fully removed
 
 FROM node:18 AS runner
 WORKDIR /app
