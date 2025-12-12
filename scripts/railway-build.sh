@@ -109,7 +109,12 @@ fi
 
 # Step 6: Build Next.js application
 log "🏗️  Building Next.js application..."
-retry "next build"
+# Use NODE_ENV=production for optimal build
+if ! retry "NODE_ENV=production next build"; then
+    # Fallback without NODE_ENV if needed
+    warn "Build with NODE_ENV failed, trying without..."
+    retry "next build"
+fi
 
 log "✅ Build completed successfully!"
 echo ""
