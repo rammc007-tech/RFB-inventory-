@@ -8,7 +8,7 @@
     "numReplicas": 1,
     "sleepApplication": false,
     "useLegacyStacker": false,
-    "startCommand": "if [ -f scripts/railway-start.sh ]; then bash scripts/railway-start.sh; else npx prisma migrate deploy || npx prisma db push --accept-data-loss || true; npm run prisma:seed || true; next start; fi",
+    "startCommand": "npx prisma migrate deploy || npx prisma db push --accept-data-loss || true; npm run prisma:seed || true; next start",
     "multiRegionConfig": {
       "us-west2": {
         "numReplicas": 1
