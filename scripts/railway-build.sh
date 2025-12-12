@@ -1,11 +1,10 @@
 #!/bin/bash
-# Railway Build Script with Error Handling and Retry Logic
-# This script ensures reliable builds on Railway
+# Railway Build Script - Builds Next.js ONLY
+# Prisma migrations/seeds run in deploy hook (after build)
 
-# Don't use set -e globally - we want to handle errors gracefully
 set -o pipefail  # Only fail on pipe errors
 
-echo "🚀 Starting Railway build process..."
+echo "🚀 Starting Railway build process (Next.js only)..."
 
 # Colors for output
 RED='\033[0;31m'
@@ -52,27 +51,6 @@ retry() {
     return 1
 }
 
-# Check if DATABASE_URL is set
-if [ -z "$DATABASE_URL" ]; then
-    error "DATABASE_URL environment variable is not set!"
-    exit 1
-fi
-
-# Verify DATABASE_URL format
-if [[ ! "$DATABASE_URL" =~ ^postgresql:// ]]; then
-    error "DATABASE_URL must be a PostgreSQL connection string (starts with postgresql://)"
-    exit 1
-fi
-
-# Check if DATABASE_URL contains .app domain (external URL)
-if [[ "$DATABASE_URL" == *"railway.internal"* ]]; then
-    error "DATABASE_URL contains 'railway.internal' - this will not work during build!"
-    error "Please use an external URL with .app domain"
-    exit 1
-fi
-
-log "✅ DATABASE_URL is configured correctly"
-
 # Step 1: Install dependencies
 log "📦 Installing dependencies..."
 if ! retry "npm ci --prefer-offline --no-audit"; then
@@ -83,40 +61,19 @@ if ! retry "npm ci --prefer-offline --no-audit"; then
     fi
 fi
 
-# Step 2: Generate Prisma Client
+# Step 2: Generate Prisma Client (no database connection needed)
 log "🔧 Generating Prisma Client..."
 retry "npx prisma generate"
 
-# Step 3: Push database schema (with retry and connection check)
-log "📊 Pushing database schema..."
-log "⏳ This will also verify database connection..."
-retry "npx prisma db push --accept-data-loss --skip-generate"
-
-# Step 5: Seed database (with error handling - non-blocking)
-log "🌱 Seeding database..."
-set +e  # Don't exit on error for seeding
-npm run prisma:seed 2>&1
-seed_exit_code=$?
-set -o pipefail  # Re-enable pipefail
-
-if [ $seed_exit_code -eq 0 ]; then
-    log "✅ Database seeded successfully"
-else
-    warn "⚠️  Database seeding failed or skipped (exit code: $seed_exit_code)"
-    warn "⚠️  This is OK if data already exists - continuing build..."
-    # Continue build even if seeding fails
-fi
-
-# Step 6: Build Next.js application
+# Step 3: Build Next.js application (NO database operations)
 log "🏗️  Building Next.js application..."
-# Use NODE_ENV=production for optimal build
+log "ℹ️  Note: Database migrations/seeds will run in deploy hook"
 if ! retry "NODE_ENV=production next build"; then
-    # Fallback without NODE_ENV if needed
     warn "Build with NODE_ENV failed, trying without..."
     retry "next build"
 fi
 
 log "✅ Build completed successfully!"
 echo ""
-echo "🎉 Railway build is ready for deployment!"
+echo "🎉 Next.js build complete - migrations will run in deploy hook!"
 
