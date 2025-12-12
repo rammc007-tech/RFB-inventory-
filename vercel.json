@@ -1,13 +1,7 @@
 {
-  "git": {
-    "deploymentEnabled": {
-      "main": false,
-      "production": false,
-      "preview": false
-    }
-  },
-  "buildCommand": null,
-  "devCommand": null,
-  "installCommand": null
+  "buildCommand": "npx prisma generate && npm run build",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "regions": ["iad1"]
 }
 
