@@ -7,7 +7,7 @@ RUN npm ci --prefer-offline --no-audit --no-fund
 
 COPY . .
 RUN npx prisma generate
-RUN --mount=type=cache,target=/app/.next/cache \
+RUN --mount=type=cache,id=nextjs-cache,target=/app/.next/cache \
     npm run build
 
 FROM node:18 AS runner
