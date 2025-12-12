@@ -87,27 +87,9 @@ fi
 log "🔧 Generating Prisma Client..."
 retry "npx prisma generate"
 
-# Step 3: Wait for database to be ready (with timeout)
-log "⏳ Waiting for database connection..."
-timeout=30
-elapsed=0
-while [ $elapsed -lt $timeout ]; do
-    if npx prisma db execute --stdin <<< "SELECT 1;" > /dev/null 2>&1; then
-        log "✅ Database is ready"
-        break
-    fi
-    sleep 2
-    elapsed=$((elapsed + 2))
-    echo -n "."
-done
-
-if [ $elapsed -ge $timeout ]; then
-    error "Database connection timeout after ${timeout}s"
-    exit 1
-fi
-
-# Step 4: Push database schema (with retry)
+# Step 3: Push database schema (with retry and connection check)
 log "📊 Pushing database schema..."
+log "⏳ This will also verify database connection..."
 retry "npx prisma db push --accept-data-loss --skip-generate"
 
 # Step 5: Seed database (with error handling - non-blocking)
