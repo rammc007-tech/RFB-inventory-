@@ -13,16 +13,18 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-          cache: 'pnpm'
-
+      # Install pnpm BEFORE setup-node (important)
       - name: Install pnpm
         uses: pnpm/action-setup@v2
         with:
           version: 8
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install
@@ -38,4 +40,3 @@ jobs:
         env:
           DATABASE_URL: "file:./test.db"
           NEXTAUTH_SECRET: "test-secret"
-
