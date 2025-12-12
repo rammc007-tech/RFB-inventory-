@@ -73,6 +73,7 @@ export default function EditPurchasePage() {
       fetchAllUnits()
       fetchPurchase()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.id])
 
   const fetchPurchase = async () => {

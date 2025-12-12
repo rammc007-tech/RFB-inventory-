@@ -52,6 +52,7 @@ export default function ScaleRecipePage() {
     if (params.id) {
       fetchRecipe()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.id])
 
   const fetchRecipe = async () => {

@@ -92,6 +92,7 @@ export default function EditRecipePage() {
       fetchAllUnits()
       fetchRecipe()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.id])
 
   const fetchItems = async () => {

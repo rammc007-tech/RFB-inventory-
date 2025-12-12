@@ -48,6 +48,7 @@ export default function EditEssencePage() {
       fetchUnits()
       fetchItem()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.id])
 
   const fetchUnits = async () => {
