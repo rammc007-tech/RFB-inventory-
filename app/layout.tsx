@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { Providers } from './providers'
 import { RegisterSW } from './register-sw'
+import { OfflineIndicator } from '@/components/OfflineIndicator'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -31,6 +32,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <RegisterSW />
+        <OfflineIndicator />
         <Providers>{children}</Providers>
       </body>
     </html>
