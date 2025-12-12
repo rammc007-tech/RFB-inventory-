@@ -1,15 +1,14 @@
 # Nixpacks configuration for Railway
-# Force npm instead of pnpm
-# Note: railway.json buildCommand overrides build phase
+# Industry-standard Next.js + Prisma deployment
 
 [phases.setup]
 nixPkgs = ["nodejs-18_x"]
 
-# Install phase - runs before buildCommand
 [phases.install]
 cmds = ["npm ci --prefer-offline --no-audit || npm install --prefer-offline --no-audit"]
 
-# Build phase - railway.json buildCommand will override this
 [phases.build]
-cmds = ["bash scripts/railway-build.sh"]
-
+cmds = [
+  "npx prisma generate",
+  "NODE_ENV=production next build"
+]
