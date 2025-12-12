@@ -2,7 +2,8 @@
 # Nixpacks Build Script - Railway Environment Variables
 # Railway automatically provides environment variables during build
 
-set -e
+# Don't exit on error - handle gracefully
+set +e
 
 echo "🚀 Starting Railway build process..."
 
@@ -18,9 +19,11 @@ error() { echo -e "${RED}[ERROR]${NC} $1" >&2; }
 
 # Step 1: Generate Prisma Client (no DB connection needed)
 log "🔧 Generating Prisma Client..."
-npx prisma generate 2>&1 || {
+npx prisma generate 2>&1
+PRISMA_EXIT=$?
+if [ $PRISMA_EXIT -ne 0 ]; then
     warn "Prisma generate warning (continuing anyway)"
-}
+fi
 
 # Step 2: Build Next.js
 # Railway environment variables are automatically available
@@ -39,11 +42,15 @@ log "  NEXTAUTH_URL=${NEXTAUTH_URL}"
 log "  DATABASE_URL=${DATABASE_URL:0:30}..." # Show first 30 chars only
 
 # Build Next.js
-if next build 2>&1; then
+log "Running next build..."
+next build 2>&1
+BUILD_EXIT=$?
+
+if [ $BUILD_EXIT -eq 0 ]; then
     log "✅ Build completed successfully!"
     exit 0
 else
-    error "❌ Build failed"
+    error "❌ Build failed with exit code: $BUILD_EXIT"
     exit 1
 fi
 
