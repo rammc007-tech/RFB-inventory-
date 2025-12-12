@@ -51,14 +51,19 @@ retry() {
     return 1
 }
 
-# Step 1: Install dependencies
-log "📦 Installing dependencies..."
-if ! retry "npm ci --prefer-offline --no-audit"; then
-    warn "npm ci failed, trying npm install..."
-    if ! retry "npm install --prefer-offline --no-audit"; then
-        error "Failed to install dependencies after all retries"
-        exit 1
+# Step 1: Install dependencies (if not already installed by Nixpacks)
+log "📦 Checking dependencies..."
+if [ ! -d "node_modules" ] || [ ! -f "node_modules/.package-lock.json" ]; then
+    log "📦 Installing dependencies..."
+    if ! retry "npm ci --prefer-offline --no-audit"; then
+        warn "npm ci failed, trying npm install..."
+        if ! retry "npm install --prefer-offline --no-audit"; then
+            error "Failed to install dependencies after all retries"
+            exit 1
+        fi
     fi
+else
+    log "✅ Dependencies already installed (by Nixpacks)"
 fi
 
 # Step 2: Generate Prisma Client (no database connection needed)
