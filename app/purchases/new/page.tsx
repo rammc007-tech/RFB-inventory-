@@ -158,7 +158,7 @@ export default function NewPurchasePage() {
     setLoading(true)
 
     try {
-      // Validate date - must be a valid date and not in the future
+      // Validate date - must be a valid date
       if (!formData.date) {
         alert('Please select a date')
         setLoading(false)
@@ -166,17 +166,9 @@ export default function NewPurchasePage() {
       }
 
       const selectedDate = new Date(formData.date)
-      const today = new Date()
-      today.setHours(23, 59, 59, 999) // End of today
 
       if (isNaN(selectedDate.getTime())) {
         alert('Invalid date selected')
-        setLoading(false)
-        return
-      }
-
-      if (selectedDate > today) {
-        alert('Purchase date cannot be in the future. Please select today or a past date.')
         setLoading(false)
         return
       }
@@ -324,18 +316,8 @@ export default function NewPurchasePage() {
                 type="date"
                 value={formData.date}
                 onChange={(e) => {
-                  const selectedDate = e.target.value
-                  const today = getTodayDate() // Use local timezone date
-                  
-                  // Validate date
-                  if (selectedDate > today) {
-                    alert('Purchase date cannot be in the future. Please select today or a past date.')
-                    return
-                  }
-                  
-                  setFormData({ ...formData, date: selectedDate })
+                  setFormData({ ...formData, date: e.target.value })
                 }}
-                max={getTodayDate()} // Prevent future dates - use local timezone
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
               />

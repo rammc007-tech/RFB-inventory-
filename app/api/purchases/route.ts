@@ -145,13 +145,6 @@ export async function POST(request: Request) {
       if (isNaN(purchaseDate.getTime())) {
         return NextResponse.json({ error: 'Invalid date format' }, { status: 400 })
       }
-
-      // Validate date is not in the future
-      const today = new Date()
-      today.setHours(23, 59, 59, 999)
-      if (purchaseDate > today) {
-        return NextResponse.json({ error: 'Purchase date cannot be in the future' }, { status: 400 })
-      }
     } catch (dateError) {
       return NextResponse.json({ error: 'Invalid date format' }, { status: 400 })
     }

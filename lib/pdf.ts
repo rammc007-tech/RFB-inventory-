@@ -54,6 +54,17 @@ export interface PDFOptions {
       unit: string
     }>
   }>
+  purchaseDetails?: Array<{
+    date: string
+    supplier: string
+    totalAmount: string
+    items: Array<{
+      itemName: string
+      quantity: string
+      unitPrice: string
+      lineTotal: string
+    }>
+  }>
 }
 
 export async function generatePDF(options: PDFOptions): Promise<Buffer> {
@@ -403,6 +414,181 @@ export async function generatePDF(options: PDFOptions): Promise<Buffer> {
           })
           }
           
+          doc.end()
+          return
+        }
+        
+        // If purchase details are provided, use detailed purchase format
+        if (options.purchaseDetails && options.purchaseDetails.length > 0) {
+          // Purchase Details Format
+          options.purchaseDetails.forEach((purchase, purchaseIndex) => {
+            // Check if we need a new page
+            if (yPosition > 700) {
+              doc.addPage()
+              yPosition = 50
+            }
+
+            // Purchase Header
+            doc.fontSize(12)
+            doc.font('Helvetica-Bold')
+            doc.text(`${purchase.supplier} - ${purchase.date}`, 50, yPosition)
+            yPosition += 20
+
+            // Items Table Header
+            const itemTableTop = yPosition
+            const itemCellHeight = 20
+            const itemTableWidth = 495
+            const itemColWidths = [250, 100, 80, 65] // ITEM, QUANTITY, UNIT PRICE, TOTAL
+
+            // Table Header
+            doc.fillColor('#D64545')
+            doc.rect(50, itemTableTop, itemTableWidth, itemCellHeight).fill()
+            doc.strokeColor('#D64545')
+            doc.rect(50, itemTableTop, itemTableWidth, itemCellHeight).stroke()
+
+            doc.fillColor('#FFFFFF')
+            doc.fontSize(9)
+            doc.font('Helvetica-Bold')
+            let itemX = 55
+            doc.text('ITEM', itemX, itemTableTop + 6)
+            itemX += itemColWidths[0]
+            doc.text('QUANTITY', itemX, itemTableTop + 6)
+            itemX += itemColWidths[1]
+            doc.text('UNIT PRICE', itemX, itemTableTop + 6)
+            itemX += itemColWidths[2]
+            doc.text('TOTAL', itemX, itemTableTop + 6)
+
+            // Items Table Rows
+            doc.fillColor('#000000')
+            doc.strokeColor('#000000')
+            doc.fontSize(8)
+            doc.font('Helvetica')
+            let itemY = itemTableTop + itemCellHeight
+
+            purchase.items.forEach((item, itemIdx) => {
+              if (itemY + itemCellHeight > 750) {
+                doc.addPage()
+                itemY = 50
+                // Redraw header on new page
+                let newPageItemX = 50
+                doc.fillColor('#D64545')
+                doc.rect(newPageItemX, itemY - itemCellHeight, itemTableWidth, itemCellHeight).fill()
+                doc.strokeColor('#D64545')
+                doc.rect(newPageItemX, itemY - itemCellHeight, itemTableWidth, itemCellHeight).stroke()
+                doc.fillColor('#FFFFFF')
+                doc.fontSize(9)
+                doc.font('Helvetica-Bold')
+                doc.text('ITEM', newPageItemX + 5, itemY - itemCellHeight + 6)
+                newPageItemX += itemColWidths[0]
+                doc.text('QUANTITY', newPageItemX, itemY - itemCellHeight + 6)
+                newPageItemX += itemColWidths[1]
+                doc.text('UNIT PRICE', newPageItemX, itemY - itemCellHeight + 6)
+                newPageItemX += itemColWidths[2]
+                doc.text('TOTAL', newPageItemX, itemY - itemCellHeight + 6)
+                doc.fillColor('#000000')
+                doc.strokeColor('#000000')
+                doc.font('Helvetica')
+              }
+
+              // Alternate row color
+              if (itemIdx % 2 === 0) {
+                doc.fillColor('#F7E7D9')
+                doc.rect(50, itemY, itemTableWidth, itemCellHeight)
+                doc.fill()
+                doc.fillColor('#000000')
+              }
+
+              itemX = 55
+              doc.rect(50, itemY, itemTableWidth, itemCellHeight)
+              doc.stroke()
+
+              doc.text(item.itemName.substring(0, 35), itemX, itemY + 6, { width: itemColWidths[0] - 10 })
+              itemX += itemColWidths[0]
+              doc.text(item.quantity, itemX, itemY + 6, { width: itemColWidths[1] - 10 })
+              itemX += itemColWidths[1]
+              doc.text(replaceRupeeSymbol(item.unitPrice), itemX, itemY + 6, { width: itemColWidths[2] - 10 })
+              itemX += itemColWidths[2]
+              doc.text(replaceRupeeSymbol(item.lineTotal), itemX, itemY + 6, { width: itemColWidths[3] - 10 })
+
+              itemY += itemCellHeight
+            })
+
+            yPosition = itemY + 15
+
+            // Purchase Total
+            doc.fontSize(10)
+            doc.font('Helvetica-Bold')
+            doc.text(`Total Amount: ${replaceRupeeSymbol(purchase.totalAmount)}`, 350, yPosition)
+
+            yPosition += 30
+
+            // Add separator line between purchases
+            if (options.purchaseDetails && purchaseIndex < options.purchaseDetails.length - 1) {
+              doc.strokeColor('#CCCCCC')
+              doc.moveTo(50, yPosition)
+              doc.lineTo(545, yPosition)
+              doc.stroke()
+              doc.strokeColor('#000000')
+              yPosition += 20
+            }
+          })
+
+          // Add Summary Section if provided
+          if (options.dailyTotals || options.monthlyTotals || options.grandTotal) {
+            if (yPosition + 100 > 750) {
+              doc.addPage()
+              yPosition = 50
+            } else {
+              yPosition += 30
+            }
+
+            doc.fontSize(14)
+            doc.font('Helvetica-Bold')
+            doc.text('Summary', 50, yPosition)
+            yPosition += 20
+
+            // Daily Totals
+            if (options.dailyTotals && options.dailyTotals.length > 0) {
+              doc.fontSize(10)
+              doc.font('Helvetica-Bold')
+              doc.text('Daily Totals:', 50, yPosition)
+              yPosition += 15
+              doc.font('Helvetica')
+              options.dailyTotals.forEach((daily) => {
+                if (yPosition + 18 > 750) { doc.addPage(); yPosition = 50; doc.text('Daily Totals (cont.):', 50, yPosition); yPosition += 15; }
+                doc.text(daily.date, 50, yPosition, { width: 200 })
+                doc.text(replaceRupeeSymbol(daily.total), 250, yPosition, { width: 200, align: 'right' })
+                yPosition += 18
+              })
+              yPosition += 10
+            }
+
+            // Monthly Totals
+            if (options.monthlyTotals && options.monthlyTotals.length > 0) {
+              doc.fontSize(10)
+              doc.font('Helvetica-Bold')
+              doc.text('Monthly Totals:', 50, yPosition)
+              yPosition += 15
+              doc.font('Helvetica')
+              options.monthlyTotals.forEach((monthly) => {
+                if (yPosition + 18 > 750) { doc.addPage(); yPosition = 50; doc.text('Monthly Totals (cont.):', 50, yPosition); yPosition += 15; }
+                doc.text(monthly.month, 50, yPosition, { width: 200 })
+                doc.text(replaceRupeeSymbol(monthly.total), 250, yPosition, { width: 200, align: 'right' })
+                yPosition += 18
+              })
+              yPosition += 10
+            }
+
+            // Grand Total
+            if (options.grandTotal) {
+              doc.fontSize(12)
+              doc.font('Helvetica-Bold')
+              if (yPosition + 20 > 750) { doc.addPage(); yPosition = 50; }
+              doc.text('Grand Total:', 50, yPosition)
+              doc.text(replaceRupeeSymbol(options.grandTotal), 350, yPosition, { width: 195, align: 'right' })
+            }
+          }
+
           doc.end()
           return
         }

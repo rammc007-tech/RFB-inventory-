@@ -355,16 +355,8 @@ export default function EditPurchasePage() {
                 type="date"
                 value={formData.date}
                 onChange={(e) => {
-                  const selectedDate = e.target.value
-                  const today = getTodayDate()
-                  
-                  if (selectedDate > today) {
-                    alert('Purchase date cannot be in the future. Please select today or a past date.')
-                    return
-                  }
-                  setFormData({ ...formData, date: selectedDate })
+                  setFormData({ ...formData, date: e.target.value })
                 }}
-                max={getTodayDate()}
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
               />

@@ -38,6 +38,17 @@ interface PrintButtonProps {
         totalCost: string
         averageCostPerUnit: string
       }
+      purchaseDetails?: Array<{
+        date: string
+        supplier: string
+        totalAmount: string
+        items: Array<{
+          itemName: string
+          quantity: string
+          unitPrice: string
+          lineTotal: string
+        }>
+      }>
     }
   }
   className?: string

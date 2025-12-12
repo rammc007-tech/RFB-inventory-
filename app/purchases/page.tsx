@@ -210,6 +210,17 @@ export default function PurchasesPage() {
                 })),
                 filename: selectedDate ? `purchases-${selectedDate}` : 'purchases',
                 extra: {
+                  purchaseDetails: filteredPurchases.map((purchase) => ({
+                    date: formatDate(purchase.date),
+                    supplier: purchase.supplier.name,
+                    totalAmount: formatCurrency(purchase.totalAmount),
+                    items: purchase.items.map((item) => ({
+                      itemName: item.item.name,
+                      quantity: `${item.quantity.toFixed(2)} ${item.unit.symbol}`,
+                      unitPrice: formatCurrency(item.unitPrice),
+                      lineTotal: formatCurrency(item.lineTotal),
+                    })),
+                  })),
                   dailyTotals: Object.entries(dailyTotals)
                     .sort(([a], [b]) => b.localeCompare(a))
                     .map(([date, total]) => ({
