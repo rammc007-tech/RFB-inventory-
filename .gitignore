@@ -28,8 +28,8 @@ yarn-error.log*
 
 # vercel
 .vercel
-vercel.json
 .vercel-*
+# Note: vercel.json is kept to disable auto-deployments
 
 # typescript
 *.tsbuildinfo

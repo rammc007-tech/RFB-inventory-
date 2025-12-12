@@ -1,0 +1,13 @@
+{
+  "git": {
+    "deploymentEnabled": {
+      "main": false,
+      "production": false,
+      "preview": false
+    }
+  },
+  "buildCommand": null,
+  "devCommand": null,
+  "installCommand": null
+}
+
