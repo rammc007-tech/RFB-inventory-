@@ -9,3 +9,7 @@ nixPkgs = ["nodejs-18_x"]
 [phases.install]
 cmds = ["npm ci --prefer-offline --no-audit || npm install --prefer-offline --no-audit"]
 
+# Build phase - railway.json buildCommand will override this
+[phases.build]
+cmds = ["bash scripts/railway-build.sh"]
+

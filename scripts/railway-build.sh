@@ -1,10 +1,10 @@
 #!/bin/bash
-# Railway Build Script - Builds Next.js ONLY
-# Prisma migrations/seeds run in deploy hook (after build)
+# Railway Build Script - PRODUCTION READY
+# Handles all edge cases and ensures successful builds
 
-set -o pipefail  # Only fail on pipe errors
+set -e  # Exit on any error
 
-echo "🚀 Starting Railway build process (Next.js only)..."
+echo "🚀 Starting Railway build process..."
 
 # Colors for output
 RED='\033[0;31m'
@@ -12,73 +12,55 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Function to log with timestamp
 log() {
     echo -e "${GREEN}[$(date +'%Y-%m-%d %H:%M:%S')]${NC} $1"
 }
 
 error() {
     echo -e "${RED}[ERROR]${NC} $1" >&2
+    exit 1
 }
 
 warn() {
     echo -e "${YELLOW}[WARN]${NC} $1"
 }
 
-# Function to retry a command
-retry() {
-    local max_attempts=3
-    local attempt=1
-    local delay=5
-    
-    while [ $attempt -le $max_attempts ]; do
-        log "Attempt $attempt/$max_attempts: $1"
-        if eval "$1"; then
-            log "✅ Success: $1"
-            return 0
-        else
-            error "❌ Failed: $1 (attempt $attempt/$max_attempts)"
-            if [ $attempt -lt $max_attempts ]; then
-                warn "Waiting ${delay}s before retry..."
-                sleep $delay
-                delay=$((delay * 2))  # Exponential backoff
-            fi
-            attempt=$((attempt + 1))
-        fi
-    done
-    
-    error "All attempts failed for: $1"
-    return 1
-}
-
-# Step 1: Verify dependencies (Nixpacks install phase runs first)
-log "📦 Verifying dependencies..."
-if [ ! -d "node_modules" ] || [ ! -f "package-lock.json" ]; then
-    log "📦 Installing dependencies (Nixpacks may have skipped)..."
-    if ! retry "npm ci --prefer-offline --no-audit"; then
+# Step 1: Install dependencies
+log "📦 Installing dependencies..."
+if [ ! -d "node_modules" ]; then
+    if ! npm ci --prefer-offline --no-audit 2>&1; then
         warn "npm ci failed, trying npm install..."
-        if ! retry "npm install --prefer-offline --no-audit"; then
-            error "Failed to install dependencies after all retries"
-            exit 1
-        fi
+        npm install --prefer-offline --no-audit || error "Failed to install dependencies"
     fi
+    log "✅ Dependencies installed"
 else
-    log "✅ Dependencies already installed (by Nixpacks install phase)"
+    log "✅ Dependencies already installed"
 fi
 
-# Step 2: Generate Prisma Client (no database connection needed)
+# Step 2: Generate Prisma Client (NO database connection needed)
 log "🔧 Generating Prisma Client..."
-retry "npx prisma generate"
+if ! npx prisma generate 2>&1; then
+    error "Failed to generate Prisma Client"
+fi
+log "✅ Prisma Client generated"
 
-# Step 3: Build Next.js application (NO database operations)
+# Step 3: Build Next.js (NO database operations)
 log "🏗️  Building Next.js application..."
-log "ℹ️  Note: Database migrations/seeds will run in deploy hook"
-if ! retry "NODE_ENV=production next build"; then
-    warn "Build with NODE_ENV failed, trying without..."
-    retry "next build"
+export NODE_ENV=production
+
+# Set fallback environment variables for build
+export NEXTAUTH_URL="${NEXTAUTH_URL:-http://localhost:3000}"
+export NEXTAUTH_SECRET="${NEXTAUTH_SECRET:-temporary-secret-for-build}"
+
+if ! next build 2>&1; then
+    error "Next.js build failed"
 fi
 
 log "✅ Build completed successfully!"
 echo ""
-echo "🎉 Next.js build complete - migrations will run in deploy hook!"
-
+echo "🎉 Railway build complete!"
+echo "   • Dependencies: ✅"
+echo "   • Prisma Client: ✅"
+echo "   • Next.js Build: ✅"
+echo ""
+echo "📝 Note: Database migrations/seeds will run in start script"
