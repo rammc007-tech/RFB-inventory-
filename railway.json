@@ -8,6 +8,7 @@
     "numReplicas": 1,
     "sleepApplication": false,
     "useLegacyStacker": false,
+    "startCommand": "bash scripts/railway-start.sh",
     "multiRegionConfig": {
       "us-west2": {
         "numReplicas": 1
