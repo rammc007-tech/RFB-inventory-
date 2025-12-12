@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { generatePDF, PDFOptions } from '@/lib/pdf'
 
 export async function POST(request: NextRequest) {
+export const dynamic = 'force-dynamic'
   try {
     const session = await getServerSession(authOptions)
     if (!session) {
