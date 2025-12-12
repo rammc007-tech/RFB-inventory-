@@ -79,73 +79,39 @@ export function PrintButton({ endpoint, options, className }: PrintButtonProps) 
     }
   }
 
-  const handleDownload = async () => {
+  // Example: Simplify handleDownload / handlePreview
+  const handlePDFAction = async (action: 'download' | 'preview' | 'print') => {
     setLoading(true)
     setShowMenu(false)
     try {
       const blob = await generatePDF()
-      if (blob) {
-        const url = window.URL.createObjectURL(blob)
+      if (!blob) return
+
+      const url = window.URL.createObjectURL(blob)
+
+      if (action === 'download') {
         const a = document.createElement('a')
         a.href = url
         a.download = `${options.filename || 'document'}.pdf`
-        document.body.appendChild(a)
         a.click()
-        window.URL.revokeObjectURL(url)
+        document.body.appendChild(a)
         document.body.removeChild(a)
-      }
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handlePreview = async () => {
-    setLoading(true)
-    setShowMenu(false)
-    try {
-      const blob = await generatePDF()
-      if (blob) {
-        const url = window.URL.createObjectURL(blob)
-        // Open in new window for preview
-        const printWindow = window.open(url, '_blank')
-        if (printWindow) {
-          printWindow.focus()
-          // Clean up URL after a delay
-          setTimeout(() => {
-            // Don't revoke immediately, let user view it
-          }, 100)
-        } else {
-          alert('Please allow popups to preview the PDF')
-          window.URL.revokeObjectURL(url)
-        }
-      }
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleDirectPrint = async () => {
-    setLoading(true)
-    setShowMenu(false)
-    try {
-      const blob = await generatePDF()
-      if (blob) {
-        const url = window.URL.createObjectURL(blob)
-        const printWindow = window.open(url, '_blank')
-        if (printWindow) {
-          printWindow.onload = () => {
-            // Wait a bit for PDF to load, then trigger print
-            setTimeout(() => {
-              printWindow.print()
-              // Clean up after printing dialog closes
+        window.URL.revokeObjectURL(url)
+      } else if (action === 'preview' || action === 'print') {
+        const win = window.open(url, '_blank')
+        if (win) {
+          win.focus()
+          if (action === 'print') {
+            win.onload = () => {
+              win.print()
               setTimeout(() => {
+                win.close()
                 window.URL.revokeObjectURL(url)
-                printWindow.close()
               }, 1000)
-            }, 500)
+            }
           }
         } else {
-          alert('Please allow popups to print the PDF')
+          alert('Please allow popups')
           window.URL.revokeObjectURL(url)
         }
       }
@@ -169,7 +135,7 @@ export function PrintButton({ endpoint, options, className }: PrintButtonProps) 
       {showMenu && (
         <div className="absolute right-0 mt-1 w-56 bg-white rounded-md shadow-lg border border-gray-200 z-50">
           <button
-            onClick={handleDownload}
+            onClick={() => handlePDFAction('download')}
             disabled={loading}
             className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
           >
@@ -177,7 +143,7 @@ export function PrintButton({ endpoint, options, className }: PrintButtonProps) 
             <span>Download PDF</span>
           </button>
           <button
-            onClick={handlePreview}
+            onClick={() => handlePDFAction('preview')}
             disabled={loading}
             className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm border-t border-gray-200"
           >
@@ -185,7 +151,7 @@ export function PrintButton({ endpoint, options, className }: PrintButtonProps) 
             <span>Preview PDF</span>
           </button>
           <button
-            onClick={handleDirectPrint}
+            onClick={() => handlePDFAction('print')}
             disabled={loading}
             className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm border-t border-gray-200"
           >
