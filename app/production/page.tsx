@@ -143,6 +143,7 @@ export default function ProductionPage() {
                   : startDate || endDate
                   ? `RISHA FOODS AND BAKERY | From ${startDate ? formatDate(startDate) : 'Start'} to ${endDate ? formatDate(endDate) : 'End'}`
                   : 'RISHA FOODS AND BAKERY',
+
                 columns: [
                   { header: 'Date', dataKey: 'date' },
                   { header: 'Recipe', dataKey: 'recipe' },
@@ -150,6 +151,7 @@ export default function ProductionPage() {
                   { header: 'Total Cost', dataKey: 'totalCost' },
                   { header: 'Cost/Unit', dataKey: 'costPerUnit' },
                 ],
+
                 data: filteredProductions.map((production) => ({
                   date: formatDate(production.date),
                   recipe: production.recipe.name,
@@ -157,24 +159,31 @@ export default function ProductionPage() {
                   totalCost: formatCurrency(production.totalCost),
                   costPerUnit: formatCurrency(production.costPerUnit),
                 })),
+
                 filename: selectedDate ? `productions-${selectedDate}` : 'productions',
-                dailyTotals: Object.entries(dailyTotals)
-                  .sort(([a], [b]) => b.localeCompare(a))
-                  .map(([date, total]) => ({
-                    date: formatDate(date),
-                    total: formatCurrency(total),
-                  })),
-                monthlyTotals: Object.entries(monthlyTotals)
-                  .sort(([a], [b]) => b.localeCompare(a))
-                  .map(([month, total]) => {
-                    const [year, monthNum] = month.split('-')
-                    const monthName = new Date(parseInt(year), parseInt(monthNum) - 1).toLocaleString('en-IN', { month: 'long', year: 'numeric' })
-                    return {
-                      month: monthName,
+
+                extra: {
+                  dailyTotals: Object.entries(dailyTotals)
+                    .sort(([a], [b]) => b.localeCompare(a))
+                    .map(([date, total]) => ({
+                      date: formatDate(date),
                       total: formatCurrency(total),
-                    }
-                  }),
-                grandTotal: formatCurrency(grandTotal),
+                    })),
+
+                  monthlyTotals: Object.entries(monthlyTotals)
+                    .sort(([a], [b]) => b.localeCompare(a))
+                    .map(([month, total]) => {
+                      const [year, monthNum] = month.split('-')
+                      const monthName = new Date(parseInt(year), parseInt(monthNum) - 1)
+                        .toLocaleString('en-IN', { month: 'long', year: 'numeric' })
+                      return {
+                        month: monthName,
+                        total: formatCurrency(total),
+                      }
+                    }),
+
+                  grandTotal: formatCurrency(grandTotal),
+                }
               }}
             />
             <Link
