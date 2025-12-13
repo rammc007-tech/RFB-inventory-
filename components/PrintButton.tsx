@@ -123,7 +123,11 @@ export function PrintButton({ endpoint, options, className }: PrintButtonProps) 
     setShowMenu(false)
     try {
       const blob = await generatePDF()
-      if (!blob) return
+      if (!blob) {
+        // Fallback to browser print if PDF generation fails
+        handleBrowserPrint()
+        return
+      }
 
       const url = window.URL.createObjectURL(blob)
 
@@ -151,10 +155,130 @@ export function PrintButton({ endpoint, options, className }: PrintButtonProps) 
         } else {
           alert('Please allow popups')
           window.URL.revokeObjectURL(url)
+          // Fallback to browser print if popup blocked
+          handleBrowserPrint()
         }
       }
+    } catch (error) {
+      console.error('PDF action failed, using browser print fallback:', error)
+      // Fallback to browser print on any error
+      handleBrowserPrint()
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Alternative browser print method (fallback)
+  const handleBrowserPrint = () => {
+    try {
+      // Create a printable HTML table from the data
+      const printWindow = window.open('', '_blank')
+      if (!printWindow) {
+        alert('Please allow popups to use print feature')
+        return
+      }
+
+      const html = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>${options.title}</title>
+            <style>
+              @media print {
+                @page { margin: 1cm; }
+                body { margin: 0; }
+              }
+              body {
+                font-family: Arial, sans-serif;
+                padding: 20px;
+                color: #000;
+              }
+              h1 { color: #D64545; margin-bottom: 10px; }
+              h2 { color: #666; margin-bottom: 20px; font-size: 14px; }
+              table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 20px;
+              }
+              th {
+                background-color: #D64545;
+                color: white;
+                padding: 10px;
+                text-align: left;
+                font-weight: bold;
+              }
+              td {
+                padding: 8px;
+                border-bottom: 1px solid #ddd;
+              }
+              tr:nth-child(even) { background-color: #f9f9f9; }
+              .summary {
+                margin-top: 30px;
+                padding-top: 20px;
+                border-top: 2px solid #D64545;
+              }
+              .grand-total {
+                font-size: 18px;
+                font-weight: bold;
+                color: #D64545;
+                margin-top: 20px;
+                text-align: right;
+              }
+            </style>
+          </head>
+          <body>
+            <h1>${options.title}</h1>
+            ${options.subtitle ? `<h2>${options.subtitle}</h2>` : ''}
+            <table>
+              <thead>
+                <tr>
+                  ${options.columns.map(col => `<th>${col.header}</th>`).join('')}
+                </tr>
+              </thead>
+              <tbody>
+                ${options.data.map(row => `
+                  <tr>
+                    ${options.columns.map(col => `<td>${row[col.dataKey] || ''}</td>`).join('')}
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+            ${options.extra?.grandTotal ? `
+              <div class="summary">
+                <div class="grand-total">GRAND TOTAL: ${options.extra.grandTotal}</div>
+              </div>
+            ` : ''}
+            ${options.extra?.dailyTotals && options.extra.dailyTotals.length > 0 ? `
+              <div class="summary">
+                <h3>Daily Totals:</h3>
+                ${options.extra.dailyTotals.map(d => `<p>${d.date}: ${d.total}</p>`).join('')}
+              </div>
+            ` : ''}
+            ${options.extra?.monthlyTotals && options.extra.monthlyTotals.length > 0 ? `
+              <div class="summary">
+                <h3>Monthly Totals:</h3>
+                ${options.extra.monthlyTotals.map(m => `<p>${m.month}: ${m.total}</p>`).join('')}
+              </div>
+            ` : ''}
+          </body>
+        </html>
+      `
+
+      printWindow.document.write(html)
+      printWindow.document.close()
+      printWindow.focus()
+      
+      // Wait for content to load, then print
+      setTimeout(() => {
+        printWindow.print()
+        // Close after print dialog
+        setTimeout(() => {
+          printWindow.close()
+        }, 1000)
+      }, 500)
+    } catch (error) {
+      console.error('Browser print failed:', error)
+      alert('Print failed. Please try again or use the download option.')
     }
   }
 
