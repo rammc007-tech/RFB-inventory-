@@ -534,8 +534,9 @@ export async function generatePDF(options: PDFOptions): Promise<Buffer> {
           })
 
           // Add Summary Section if provided (ALWAYS show for purchaseDetails)
-          if (options.dailyTotals || options.monthlyTotals || options.grandTotal || (options.purchaseDetails && options.purchaseDetails.length > 0)) {
-            if (yPosition + 100 > 750) {
+          // Always show summary when purchaseDetails exist
+          if (options.purchaseDetails && options.purchaseDetails.length > 0) {
+            if (yPosition + 150 > 750) {
               doc.addPage()
               yPosition = 50
             } else {
@@ -579,7 +580,7 @@ export async function generatePDF(options: PDFOptions): Promise<Buffer> {
               yPosition += 10
             }
 
-            // Grand Total - Make it more prominent (ALWAYS SHOW)
+            // Grand Total - Make it more prominent (ALWAYS SHOW for purchaseDetails)
             let grandTotalToShow = options.grandTotal
             if (!grandTotalToShow && options.purchaseDetails && options.purchaseDetails.length > 0) {
               // Calculate grand total from purchaseDetails if not provided
@@ -594,7 +595,30 @@ export async function generatePDF(options: PDFOptions): Promise<Buffer> {
               }
             }
 
-            if (grandTotalToShow) {
+            // ALWAYS show grand total when purchaseDetails exist
+            if (options.purchaseDetails && options.purchaseDetails.length > 0) {
+              yPosition += 10
+              // Add separator line before grand total
+              doc.strokeColor('#D64545') // Red color for separator
+              doc.lineWidth(2) // Thicker line
+              doc.moveTo(50, yPosition)
+              doc.lineTo(545, yPosition)
+              doc.stroke()
+              doc.lineWidth(1) // Reset line width
+              doc.strokeColor('#000000') // Reset stroke color
+              yPosition += 15
+              
+              // Grand Total with larger, bold font
+              if (yPosition + 30 > 750) { doc.addPage(); yPosition = 50; }
+              doc.fontSize(16)
+              doc.font('Helvetica-Bold')
+              doc.fillColor('#D64545') // Red color for text
+              doc.text('GRAND TOTAL:', 50, yPosition)
+              doc.fontSize(18) // Even larger font for the value
+              doc.text(replaceRupeeSymbol(grandTotalToShow || 'Rs.0.00'), 350, yPosition, { width: 195, align: 'right' })
+              doc.fillColor('#000000') // Reset fill color
+            } else if (grandTotalToShow) {
+              // Show grand total even if no purchaseDetails
               yPosition += 10
               // Add separator line before grand total
               doc.strokeColor('#D64545') // Red color for separator

@@ -178,6 +178,41 @@ export function PrintButton({ endpoint, options, className }: PrintButtonProps) 
         return
       }
 
+      // Check if purchaseDetails exist for detailed format
+      const hasPurchaseDetails = options.extra?.purchaseDetails && options.extra.purchaseDetails.length > 0
+
+      let purchaseDetailsHTML = ''
+      if (hasPurchaseDetails && options.extra?.purchaseDetails) {
+        purchaseDetailsHTML = options.extra.purchaseDetails.map((purchase: any) => `
+          <div style="margin-bottom: 30px; page-break-inside: avoid;">
+            <h3 style="color: #D64545; margin-bottom: 10px;">${purchase.supplier} - ${purchase.date}</h3>
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
+              <thead>
+                <tr style="background-color: #D64545; color: white;">
+                  <th style="padding: 10px; text-align: left;">ITEM</th>
+                  <th style="padding: 10px; text-align: left;">QUANTITY</th>
+                  <th style="padding: 10px; text-align: right;">UNIT PRICE</th>
+                  <th style="padding: 10px; text-align: right;">TOTAL</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${purchase.items.map((item: any, idx: number) => `
+                  <tr style="${idx % 2 === 0 ? 'background-color: #f9f9f9;' : ''}">
+                    <td style="padding: 8px; border-bottom: 1px solid #ddd;">${item.itemName}</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #ddd;">${item.quantity}</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right;">${item.unitPrice}</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right;">${item.lineTotal}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+            <div style="text-align: right; font-weight: bold; margin-top: 10px;">
+              Purchase Total: ${purchase.totalAmount}
+            </div>
+          </div>
+        `).join('')
+      }
+
       const html = `
         <!DOCTYPE html>
         <html>
@@ -195,6 +230,7 @@ export function PrintButton({ endpoint, options, className }: PrintButtonProps) 
               }
               h1 { color: #D64545; margin-bottom: 10px; }
               h2 { color: #666; margin-bottom: 20px; font-size: 14px; }
+              h3 { color: #D64545; margin-top: 20px; }
               table {
                 width: 100%;
                 border-collapse: collapse;
@@ -218,46 +254,51 @@ export function PrintButton({ endpoint, options, className }: PrintButtonProps) 
                 border-top: 2px solid #D64545;
               }
               .grand-total {
-                font-size: 18px;
+                font-size: 20px;
                 font-weight: bold;
                 color: #D64545;
                 margin-top: 20px;
+                padding: 15px;
                 text-align: right;
+                border-top: 3px solid #D64545;
+                border-bottom: 3px solid #D64545;
               }
             </style>
           </head>
           <body>
             <h1>${options.title}</h1>
             ${options.subtitle ? `<h2>${options.subtitle}</h2>` : ''}
-            <table>
-              <thead>
-                <tr>
-                  ${options.columns.map(col => `<th>${col.header}</th>`).join('')}
-                </tr>
-              </thead>
-              <tbody>
-                ${options.data.map(row => `
+            ${hasPurchaseDetails ? purchaseDetailsHTML : `
+              <table>
+                <thead>
                   <tr>
-                    ${options.columns.map(col => `<td>${row[col.dataKey] || ''}</td>`).join('')}
+                    ${options.columns.map(col => `<th>${col.header}</th>`).join('')}
                   </tr>
-                `).join('')}
-              </tbody>
-            </table>
-            ${options.extra?.grandTotal ? `
-              <div class="summary">
-                <div class="grand-total">GRAND TOTAL: ${options.extra.grandTotal}</div>
-              </div>
-            ` : ''}
+                </thead>
+                <tbody>
+                  ${options.data.map(row => `
+                    <tr>
+                      ${options.columns.map(col => `<td>${row[col.dataKey] || ''}</td>`).join('')}
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            `}
             ${options.extra?.dailyTotals && options.extra.dailyTotals.length > 0 ? `
               <div class="summary">
                 <h3>Daily Totals:</h3>
-                ${options.extra.dailyTotals.map(d => `<p>${d.date}: ${d.total}</p>`).join('')}
+                ${options.extra.dailyTotals.map((d: any) => `<p>${d.date}: ${d.total}</p>`).join('')}
               </div>
             ` : ''}
             ${options.extra?.monthlyTotals && options.extra.monthlyTotals.length > 0 ? `
               <div class="summary">
                 <h3>Monthly Totals:</h3>
-                ${options.extra.monthlyTotals.map(m => `<p>${m.month}: ${m.total}</p>`).join('')}
+                ${options.extra.monthlyTotals.map((m: any) => `<p>${m.month}: ${m.total}</p>`).join('')}
+              </div>
+            ` : ''}
+            ${options.extra?.grandTotal ? `
+              <div class="summary">
+                <div class="grand-total">GRAND TOTAL: ${options.extra.grandTotal}</div>
               </div>
             ` : ''}
           </body>
