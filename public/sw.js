@@ -1,7 +1,7 @@
 // Service Worker for RFB Inventory PWA - Enhanced Offline Support
-const CACHE_NAME = 'rfb-inventory-v3'
-const STATIC_CACHE = 'rfb-static-v3'
-const API_CACHE = 'rfb-api-v3'
+const CACHE_NAME = 'rfb-inventory-v4'
+const STATIC_CACHE = 'rfb-static-v4'
+const API_CACHE = 'rfb-api-v4'
 
 // Static assets to cache on install
 const staticAssets = [
@@ -12,6 +12,9 @@ const staticAssets = [
   '/production',
   '/items',
   '/recipes',
+  '/reports/stock',
+  '/reports/production-cost',
+  '/settings',
   '/manifest.json',
   '/offline.html',
 ]
@@ -108,7 +111,23 @@ async function networkFirstStrategy(request) {
     return networkResponse
   } catch (error) {
     console.log('[SW] Network failed, trying cache for:', request.url)
-    const cachedResponse = await caches.match(request)
+    
+    // Try exact match first
+    let cachedResponse = await caches.match(request)
+    
+    // If no exact match, try matching by URL path (ignore query params)
+    if (!cachedResponse) {
+      const url = new URL(request.url)
+      const cache = await caches.open(API_CACHE)
+      const keys = await cache.keys()
+      const matchingKey = keys.find(key => {
+        const keyUrl = new URL(key.url)
+        return keyUrl.pathname === url.pathname
+      })
+      if (matchingKey) {
+        cachedResponse = await cache.match(matchingKey)
+      }
+    }
     
     if (cachedResponse) {
       console.log('[SW] Serving from cache:', request.url)
