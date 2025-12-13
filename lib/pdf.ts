@@ -533,8 +533,8 @@ export async function generatePDF(options: PDFOptions): Promise<Buffer> {
             }
           })
 
-          // Add Summary Section if provided
-          if (options.dailyTotals || options.monthlyTotals || options.grandTotal) {
+          // Add Summary Section if provided (ALWAYS show for purchaseDetails)
+          if (options.dailyTotals || options.monthlyTotals || options.grandTotal || (options.purchaseDetails && options.purchaseDetails.length > 0)) {
             if (yPosition + 100 > 750) {
               doc.addPage()
               yPosition = 50
@@ -580,50 +580,41 @@ export async function generatePDF(options: PDFOptions): Promise<Buffer> {
             }
 
             // Grand Total - Make it more prominent (ALWAYS SHOW)
-            if (options.grandTotal) {
+            let grandTotalToShow = options.grandTotal
+            if (!grandTotalToShow && options.purchaseDetails && options.purchaseDetails.length > 0) {
+              // Calculate grand total from purchaseDetails if not provided
+              const calculatedTotal = options.purchaseDetails.reduce((sum, p) => {
+                const amountStr = p.totalAmount.replace(/[₹Rs.,\s]/g, '')
+                const amount = parseFloat(amountStr) || 0
+                return sum + amount
+              }, 0)
+              if (calculatedTotal > 0) {
+                // Format as currency
+                grandTotalToShow = `Rs.${calculatedTotal.toFixed(2)}`
+              }
+            }
+
+            if (grandTotalToShow) {
               yPosition += 10
               // Add separator line before grand total
-              doc.strokeColor('#000000')
-              doc.lineWidth(2)
+              doc.strokeColor('#D64545') // Red color for separator
+              doc.lineWidth(2) // Thicker line
               doc.moveTo(50, yPosition)
               doc.lineTo(545, yPosition)
               doc.stroke()
-              doc.lineWidth(1)
-              yPosition += 20
+              doc.lineWidth(1) // Reset line width
+              doc.strokeColor('#000000') // Reset stroke color
+              yPosition += 15
               
               // Grand Total with larger, bold font
               if (yPosition + 30 > 750) { doc.addPage(); yPosition = 50; }
               doc.fontSize(16)
               doc.font('Helvetica-Bold')
+              doc.fillColor('#D64545') // Red color for text
               doc.text('GRAND TOTAL:', 50, yPosition)
-              doc.fontSize(18)
-              doc.fillColor('#D64545')
-              doc.text(replaceRupeeSymbol(options.grandTotal), 350, yPosition, { width: 195, align: 'right' })
-              doc.fillColor('#000000')
-            } else if (options.purchaseDetails && options.purchaseDetails.length > 0) {
-              // If grandTotal not provided but we have purchaseDetails, calculate it
-              const calculatedTotal = options.purchaseDetails.reduce((sum, p) => {
-                const amount = parseFloat(p.totalAmount.replace(/[₹Rs.,]/g, '')) || 0
-                return sum + amount
-              }, 0)
-              if (calculatedTotal > 0) {
-                yPosition += 10
-                doc.strokeColor('#000000')
-                doc.lineWidth(2)
-                doc.moveTo(50, yPosition)
-                doc.lineTo(545, yPosition)
-                doc.stroke()
-                doc.lineWidth(1)
-                yPosition += 20
-                if (yPosition + 30 > 750) { doc.addPage(); yPosition = 50; }
-                doc.fontSize(16)
-                doc.font('Helvetica-Bold')
-                doc.text('GRAND TOTAL:', 50, yPosition)
-                doc.fontSize(18)
-                doc.fillColor('#D64545')
-                doc.text(`Rs.${calculatedTotal.toFixed(2)}`, 350, yPosition, { width: 195, align: 'right' })
-                doc.fillColor('#000000')
-              }
+              doc.fontSize(18) // Even larger font for the value
+              doc.text(replaceRupeeSymbol(grandTotalToShow), 350, yPosition, { width: 195, align: 'right' })
+              doc.fillColor('#000000') // Reset fill color
             }
           }
 
