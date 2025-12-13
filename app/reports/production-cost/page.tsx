@@ -163,6 +163,7 @@ export default function ProductionCostReportPage() {
                     totalCost: formatCurrency(totalCost),
                     averageCostPerUnit: formatCurrency(averageCostPerUnit),
                   },
+                  grandTotal: formatCurrency(totalCost),
                 },
               }}
             />
