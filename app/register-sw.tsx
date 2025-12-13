@@ -13,6 +13,32 @@ export function RegisterSW() {
         .then((registration) => {
           console.log('[SW] Service Worker registered:', registration.scope)
 
+          // Pre-cache critical API endpoints when online
+          if (navigator.onLine && registration.active) {
+            const criticalAPIs = [
+              '/api/dashboard/stats',
+              '/api/items',
+              '/api/purchases',
+              '/api/production',
+              '/api/recipes',
+            ]
+            
+            criticalAPIs.forEach((apiUrl) => {
+              fetch(apiUrl)
+                .then((response) => {
+                  if (response.ok && registration.active) {
+                    registration.active.postMessage({
+                      type: 'CACHE_API',
+                      url: apiUrl,
+                    })
+                  }
+                })
+                .catch((err) => {
+                  console.log('[SW] Failed to pre-cache:', apiUrl, err)
+                })
+            })
+          }
+
           // Check for updates every hour
           setInterval(() => {
             registration.update()
@@ -53,6 +79,24 @@ export function RegisterSW() {
           window.location.reload()
         }
       })
+
+      // Pre-cache API responses when online
+      const preCacheAPIs = () => {
+        if (navigator.onLine) {
+          const apis = ['/api/dashboard/stats', '/api/items', '/api/purchases', '/api/production', '/api/recipes']
+          apis.forEach((url) => {
+            fetch(url).catch(() => {
+              // Ignore errors, just try to cache
+            })
+          })
+        }
+      }
+
+      // Pre-cache on load
+      preCacheAPIs()
+
+      // Pre-cache when coming back online
+      window.addEventListener('online', preCacheAPIs)
     }
   }, [])
 

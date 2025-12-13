@@ -1,36 +1,54 @@
 // Service Worker for RFB Inventory PWA - Enhanced Offline Support
-const CACHE_NAME = 'rfb-inventory-v4'
-const STATIC_CACHE = 'rfb-static-v4'
-const API_CACHE = 'rfb-api-v4'
+const CACHE_NAME = 'rfb-inventory-v5'
+const STATIC_CACHE = 'rfb-static-v5'
+const API_CACHE = 'rfb-api-v5'
 
-// Static assets to cache on install
+// Static assets to cache on install - All critical pages
 const staticAssets = [
   '/',
   '/dashboard',
   '/login',
   '/purchases',
+  '/purchases/new',
   '/production',
+  '/production/new',
   '/items',
+  '/items/raw-material',
+  '/items/essence',
   '/recipes',
+  '/recipes/new',
   '/reports/stock',
   '/reports/production-cost',
   '/settings',
+  '/settings/users',
+  '/settings/access',
+  '/settings/backup',
+  '/settings/reset',
+  '/trash',
   '/manifest.json',
   '/offline.html',
 ]
 
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing service worker...')
+  console.log('[SW] Installing service worker v5...')
   event.waitUntil(
-    caches.open(STATIC_CACHE).then((cache) => {
-      console.log('[SW] Caching static assets')
-      return cache.addAll(staticAssets).catch((err) => {
-        console.warn('[SW] Some static assets failed to cache:', err)
-        // Continue even if some assets fail
+    Promise.all([
+      // Cache static pages
+      caches.open(STATIC_CACHE).then((cache) => {
+        console.log('[SW] Caching static assets')
+        return cache.addAll(staticAssets).catch((err) => {
+          console.warn('[SW] Some static assets failed to cache:', err)
+          // Continue even if some assets fail
+          return Promise.resolve()
+        })
+      }),
+      // Pre-cache critical API endpoints (will be populated on first visit)
+      caches.open(API_CACHE).then((cache) => {
+        console.log('[SW] API cache initialized')
         return Promise.resolve()
       })
-    })
+    ])
   )
   self.skipWaiting() // Activate immediately
 })
@@ -93,19 +111,26 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(cacheFirstStrategy(request))
 })
 
-// Network-first strategy for API calls
+// Network-first strategy for API calls with aggressive caching
 async function networkFirstStrategy(request) {
   try {
     const networkResponse = await fetch(request)
     
-    // Cache successful GET responses (especially purchases, items, etc.)
+    // Cache ALL successful GET responses (purchases, items, recipes, production, etc.)
     if (networkResponse.ok && request.method === 'GET') {
       const cache = await caches.open(API_CACHE)
       // Clone response before caching (responses can only be read once)
       const responseToCache = networkResponse.clone()
-      cache.put(request, responseToCache).catch((err) => {
-        console.warn('[SW] Failed to cache API response:', err)
-      })
+      // Cache with both exact URL and pathname-only key for better matching
+      await Promise.all([
+        cache.put(request, responseToCache).catch((err) => {
+          console.warn('[SW] Failed to cache API response:', err)
+        }),
+        // Also cache by pathname for query param variations
+        cache.put(new Request(new URL(request.url).pathname), responseToCache.clone()).catch(() => {
+          // Ignore errors for pathname-only cache
+        })
+      ])
     }
     
     return networkResponse
@@ -119,22 +144,38 @@ async function networkFirstStrategy(request) {
     if (!cachedResponse) {
       const url = new URL(request.url)
       const cache = await caches.open(API_CACHE)
-      const keys = await cache.keys()
-      const matchingKey = keys.find(key => {
-        const keyUrl = new URL(key.url)
-        return keyUrl.pathname === url.pathname
-      })
-      if (matchingKey) {
-        cachedResponse = await cache.match(matchingKey)
+      
+      // Try pathname match
+      cachedResponse = await cache.match(new Request(url.pathname))
+      
+      // If still no match, try finding any key with same pathname
+      if (!cachedResponse) {
+        const keys = await cache.keys()
+        const matchingKey = keys.find(key => {
+          try {
+            const keyUrl = new URL(key.url)
+            return keyUrl.pathname === url.pathname
+          } catch {
+            return false
+          }
+        })
+        if (matchingKey) {
+          cachedResponse = await cache.match(matchingKey)
+        }
       }
     }
     
     if (cachedResponse) {
       console.log('[SW] Serving from cache:', request.url)
-      return cachedResponse
+      // Return cached response with proper headers
+      return new Response(cachedResponse.body, {
+        status: cachedResponse.status,
+        statusText: cachedResponse.statusText,
+        headers: cachedResponse.headers,
+      })
     }
     
-    // Return offline response for API calls
+    // Return offline response for API calls only if truly no cache
     if (request.url.includes('/api/')) {
       console.log('[SW] No cache available, returning offline response')
       return new Response(
@@ -191,24 +232,45 @@ async function networkFirstWithCacheFallback(request) {
     
     if (networkResponse.ok) {
       const cache = await caches.open(STATIC_CACHE)
-      cache.put(request, networkResponse.clone())
+      // Cache the response for offline use
+      cache.put(request, networkResponse.clone()).catch((err) => {
+        console.warn('[SW] Failed to cache page:', err)
+      })
     }
     
     return networkResponse
   } catch (error) {
-    const cachedResponse = await caches.match(request)
+    console.log('[SW] Network failed for page, trying cache:', request.url)
+    
+    // Try exact match first
+    let cachedResponse = await caches.match(request)
+    
+    // If no exact match, try pathname match
+    if (!cachedResponse) {
+      const url = new URL(request.url)
+      cachedResponse = await caches.match(new Request(url.pathname))
+    }
     
     if (cachedResponse) {
+      console.log('[SW] Serving cached page:', request.url)
       return cachedResponse
     }
     
-    // Return offline page
+    // Return offline page as last resort
     const offlinePage = await caches.match('/offline.html')
     if (offlinePage) {
+      console.log('[SW] Serving offline page')
       return offlinePage
     }
     
-    throw error
+    // If even offline page is not cached, return a basic offline response
+    return new Response(
+      '<!DOCTYPE html><html><head><title>Offline</title></head><body><h1>You are offline</h1><p>Please check your internet connection.</p></body></html>',
+      {
+        status: 200,
+        headers: { 'Content-Type': 'text/html' },
+      }
+    )
   }
 }
 
@@ -222,6 +284,20 @@ self.addEventListener('message', (event) => {
     event.waitUntil(
       caches.open(STATIC_CACHE).then((cache) => {
         return cache.addAll(event.data.urls)
+      })
+    )
+  }
+  
+  // Pre-cache API endpoints on demand
+  if (event.data && event.data.type === 'CACHE_API') {
+    event.waitUntil(
+      fetch(event.data.url).then((response) => {
+        if (response.ok) {
+          const cache = caches.open(API_CACHE)
+          return cache.then((c) => c.put(event.data.url, response.clone()))
+        }
+      }).catch((err) => {
+        console.warn('[SW] Failed to pre-cache API:', err)
       })
     )
   }
