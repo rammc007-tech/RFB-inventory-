@@ -95,10 +95,14 @@ async function networkFirstStrategy(request) {
   try {
     const networkResponse = await fetch(request)
     
-    // Cache successful GET responses
+    // Cache successful GET responses (especially purchases, items, etc.)
     if (networkResponse.ok && request.method === 'GET') {
       const cache = await caches.open(API_CACHE)
-      cache.put(request, networkResponse.clone())
+      // Clone response before caching (responses can only be read once)
+      const responseToCache = networkResponse.clone()
+      cache.put(request, responseToCache).catch((err) => {
+        console.warn('[SW] Failed to cache API response:', err)
+      })
     }
     
     return networkResponse
@@ -107,15 +111,17 @@ async function networkFirstStrategy(request) {
     const cachedResponse = await caches.match(request)
     
     if (cachedResponse) {
+      console.log('[SW] Serving from cache:', request.url)
       return cachedResponse
     }
     
     // Return offline response for API calls
     if (request.url.includes('/api/')) {
+      console.log('[SW] No cache available, returning offline response')
       return new Response(
         JSON.stringify({ 
           error: 'Offline', 
-          message: 'You are currently offline. Data will sync when connection is restored.',
+          message: 'You are currently offline. Cached data will be shown when available.',
           offline: true 
         }),
         {

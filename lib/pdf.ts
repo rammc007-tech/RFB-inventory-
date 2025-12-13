@@ -579,22 +579,51 @@ export async function generatePDF(options: PDFOptions): Promise<Buffer> {
               yPosition += 10
             }
 
-            // Grand Total - Make it more prominent
+            // Grand Total - Make it more prominent (ALWAYS SHOW)
             if (options.grandTotal) {
               yPosition += 10
-              // Add separator line
+              // Add separator line before grand total
               doc.strokeColor('#000000')
+              doc.lineWidth(2)
               doc.moveTo(50, yPosition)
               doc.lineTo(545, yPosition)
               doc.stroke()
-              yPosition += 15
+              doc.lineWidth(1)
+              yPosition += 20
               
-              doc.fontSize(14)
-              doc.font('Helvetica-Bold')
-              if (yPosition + 25 > 750) { doc.addPage(); yPosition = 50; }
-              doc.text('Grand Total:', 50, yPosition)
+              // Grand Total with larger, bold font
+              if (yPosition + 30 > 750) { doc.addPage(); yPosition = 50; }
               doc.fontSize(16)
+              doc.font('Helvetica-Bold')
+              doc.text('GRAND TOTAL:', 50, yPosition)
+              doc.fontSize(18)
+              doc.fillColor('#D64545')
               doc.text(replaceRupeeSymbol(options.grandTotal), 350, yPosition, { width: 195, align: 'right' })
+              doc.fillColor('#000000')
+            } else if (options.purchaseDetails && options.purchaseDetails.length > 0) {
+              // If grandTotal not provided but we have purchaseDetails, calculate it
+              const calculatedTotal = options.purchaseDetails.reduce((sum, p) => {
+                const amount = parseFloat(p.totalAmount.replace(/[₹Rs.,]/g, '')) || 0
+                return sum + amount
+              }, 0)
+              if (calculatedTotal > 0) {
+                yPosition += 10
+                doc.strokeColor('#000000')
+                doc.lineWidth(2)
+                doc.moveTo(50, yPosition)
+                doc.lineTo(545, yPosition)
+                doc.stroke()
+                doc.lineWidth(1)
+                yPosition += 20
+                if (yPosition + 30 > 750) { doc.addPage(); yPosition = 50; }
+                doc.fontSize(16)
+                doc.font('Helvetica-Bold')
+                doc.text('GRAND TOTAL:', 50, yPosition)
+                doc.fontSize(18)
+                doc.fillColor('#D64545')
+                doc.text(`Rs.${calculatedTotal.toFixed(2)}`, 350, yPosition, { width: 195, align: 'right' })
+                doc.fillColor('#000000')
+              }
             }
           }
 
@@ -760,19 +789,27 @@ export async function generatePDF(options: PDFOptions): Promise<Buffer> {
             currentY += 10
           }
           
-          // Grand Total
+          // Grand Total - Make it more prominent
           if (options.grandTotal) {
             currentY += 10
+            // Add separator line
             doc.strokeColor('#000000')
+            doc.lineWidth(2)
             doc.moveTo(50, currentY)
             doc.lineTo(545, currentY)
             doc.stroke()
-            currentY += 15
+            doc.lineWidth(1)
+            currentY += 20
             
-            doc.fontSize(12)
+            // Grand Total with larger, bold font
+            if (currentY + 30 > 750) { doc.addPage(); currentY = 50; }
+            doc.fontSize(16)
             doc.font('Helvetica-Bold')
-            doc.text('Grand Total', 50, currentY)
+            doc.text('GRAND TOTAL:', 50, currentY)
+            doc.fontSize(18)
+            doc.fillColor('#D64545')
             doc.text(replaceRupeeSymbol(options.grandTotal), 350, currentY, { width: 195, align: 'right' })
+            doc.fillColor('#000000')
           }
         }
         
