@@ -1,13 +1,17 @@
 // Service Worker for RFB Inventory PWA - Enhanced Offline Support
-const CACHE_NAME = 'rfb-inventory-v2'
-const STATIC_CACHE = 'rfb-static-v2'
-const API_CACHE = 'rfb-api-v2'
+const CACHE_NAME = 'rfb-inventory-v3'
+const STATIC_CACHE = 'rfb-static-v3'
+const API_CACHE = 'rfb-api-v3'
 
 // Static assets to cache on install
 const staticAssets = [
   '/',
   '/dashboard',
   '/login',
+  '/purchases',
+  '/production',
+  '/items',
+  '/recipes',
   '/manifest.json',
   '/offline.html',
 ]

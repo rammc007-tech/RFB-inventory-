@@ -579,12 +579,21 @@ export async function generatePDF(options: PDFOptions): Promise<Buffer> {
               yPosition += 10
             }
 
-            // Grand Total
+            // Grand Total - Make it more prominent
             if (options.grandTotal) {
-              doc.fontSize(12)
+              yPosition += 10
+              // Add separator line
+              doc.strokeColor('#000000')
+              doc.moveTo(50, yPosition)
+              doc.lineTo(545, yPosition)
+              doc.stroke()
+              yPosition += 15
+              
+              doc.fontSize(14)
               doc.font('Helvetica-Bold')
-              if (yPosition + 20 > 750) { doc.addPage(); yPosition = 50; }
+              if (yPosition + 25 > 750) { doc.addPage(); yPosition = 50; }
               doc.text('Grand Total:', 50, yPosition)
+              doc.fontSize(16)
               doc.text(replaceRupeeSymbol(options.grandTotal), 350, yPosition, { width: 195, align: 'right' })
             }
           }
