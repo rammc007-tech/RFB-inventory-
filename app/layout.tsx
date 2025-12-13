@@ -32,7 +32,6 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <RegisterSW />
-        <OfflineIndicator />
         <Providers>{children}</Providers>
       </body>
     </html>

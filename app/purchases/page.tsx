@@ -71,6 +71,17 @@ export default function PurchasesPage() {
         if (response.status === 401) {
           // Unauthorized - user needs to login
           console.warn('Unauthorized access - please login')
+        } else if (response.status === 503 && errorData.offline) {
+          // Offline - try to use cached data
+          console.log('Offline mode - using cached data if available')
+          // Service worker will handle caching, so we can try to get from cache
+          const cachedResponse = await caches.match('/api/purchases')
+          if (cachedResponse) {
+            const cachedData = await cachedResponse.json()
+            setPurchases(Array.isArray(cachedData) ? cachedData : [])
+            setLoading(false)
+            return
+          }
         } else {
           console.error('Failed to fetch purchases:', errorData.error || 'Unknown error')
         }
@@ -79,8 +90,22 @@ export default function PurchasesPage() {
       }
       const data = await response.json()
       setPurchases(Array.isArray(data) ? data : [])
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch purchases:', error)
+      // Try to get from cache if offline
+      if (error.message?.includes('Failed to fetch') || !navigator.onLine) {
+        try {
+          const cachedResponse = await caches.match('/api/purchases')
+          if (cachedResponse) {
+            const cachedData = await cachedResponse.json()
+            setPurchases(Array.isArray(cachedData) ? cachedData : [])
+            setLoading(false)
+            return
+          }
+        } catch (cacheError) {
+          console.log('No cached data available')
+        }
+      }
       setPurchases([])
     } finally {
       setLoading(false)

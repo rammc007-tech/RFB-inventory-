@@ -12,12 +12,20 @@ export default function ResetPage() {
     totalProduction: 0,
     totalValue: 0,
   })
+  const [resetInfo, setResetInfo] = useState<{
+    lastInventoryReset: string | null
+    lastInventoryValue: number | null
+  }>({
+    lastInventoryReset: null,
+    lastInventoryValue: null,
+  })
   const [loading, setLoading] = useState(true)
   const [resetting, setResetting] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   useEffect(() => {
     fetchStats()
+    fetchResetInfo()
   }, [])
 
   const fetchStats = async () => {
@@ -34,9 +42,27 @@ export default function ResetPage() {
     }
   }
 
-  const handleReset = async (type: 'production' | 'info') => {
+  const fetchResetInfo = async () => {
+    try {
+      const response = await fetch('/api/reset')
+      if (response.ok) {
+        const data = await response.json()
+        setResetInfo(data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch reset info:', error)
+    }
+  }
+
+  const handleReset = async (type: 'production' | 'info' | 'inventory-monthly') => {
     if (type === 'production') {
       if (!confirm('Are you sure you want to reset the daily production counter? This will only affect the display count, not the actual production data.')) {
+        return
+      }
+    }
+
+    if (type === 'inventory-monthly') {
+      if (!confirm('Are you sure you want to perform monthly inventory value reset? This will record the current inventory value as the reset point for this month. The actual inventory value will continue to be calculated in real-time.')) {
         return
       }
     }
@@ -56,6 +82,9 @@ export default function ResetPage() {
       if (response.ok) {
         setMessage({ type: 'success', text: data.message || 'Reset successful' })
         fetchStats()
+        if (type === 'inventory-monthly') {
+          fetchResetInfo()
+        }
       } else {
         setMessage({ type: 'error', text: data.error || 'Failed to reset' })
       }
@@ -145,20 +174,39 @@ export default function ResetPage() {
             </div>
           </div>
 
-          {/* Inventory Value Info */}
-          <div className="border border-gray-200 rounded-lg p-4 bg-yellow-50">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5" />
+          {/* Monthly Inventory Value Reset */}
+          <div className="border border-gray-200 rounded-lg p-4">
+            <div className="flex items-start justify-between">
               <div className="flex-1">
-                <h4 className="font-semibold text-gray-900 mb-2">Inventory Value</h4>
-                <p className="text-sm text-gray-700">
-                  Inventory Value cannot be reset as it is a real-time calculation based on current stock quantities and average prices. 
-                  It automatically updates when you make purchases or productions.
+                <h4 className="font-semibold text-gray-900 mb-2">Monthly Inventory Value Reset</h4>
+                <p className="text-sm text-gray-600 mb-2">
+                  Record the current inventory value as the monthly reset point. This does not change the actual inventory value, 
+                  which continues to be calculated in real-time. Use this to track monthly inventory value changes.
                 </p>
-                <p className="text-sm text-gray-600 mt-2">
-                  Current value: <span className="font-semibold">{formatCurrency(stats.totalValue)}</span>
-                </p>
+                <div className="space-y-1 text-sm text-gray-500 mt-2">
+                  <p>
+                    Current value: <span className="font-semibold text-gray-900">{formatCurrency(stats.totalValue)}</span>
+                  </p>
+                  {resetInfo.lastInventoryReset && (
+                    <p>
+                      Last reset: <span className="font-semibold text-gray-900">{formatDate(new Date(resetInfo.lastInventoryReset))}</span>
+                      {resetInfo.lastInventoryValue !== null && (
+                        <span className="ml-2">
+                          (Value: <span className="font-semibold">{formatCurrency(resetInfo.lastInventoryValue)}</span>)
+                        </span>
+                      )}
+                    </p>
+                  )}
+                </div>
               </div>
+              <button
+                onClick={() => handleReset('inventory-monthly')}
+                disabled={resetting}
+                className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-md hover:bg-opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <RotateCcw className="h-4 w-4" />
+                {resetting ? 'Resetting...' : 'Reset Monthly'}
+              </button>
             </div>
           </div>
 

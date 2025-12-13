@@ -39,13 +39,37 @@ export default function RawMaterialPage() {
     try {
       const response = await fetch('/api/items?type=RAW_MATERIAL')
       if (!response.ok) {
+        // Try cache if offline
+        if (response.status === 503 || !navigator.onLine) {
+          const cachedResponse = await caches.match('/api/items?type=RAW_MATERIAL')
+          if (cachedResponse) {
+            const cachedData = await cachedResponse.json()
+            setItems(Array.isArray(cachedData) ? cachedData : [])
+            setLoading(false)
+            return
+          }
+        }
         throw new Error('Failed to fetch items')
       }
       const data = await response.json()
       // Ensure data is an array
       setItems(Array.isArray(data) ? data : [])
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch items:', error)
+      // Try cache on network error
+      if (error.message?.includes('Failed to fetch') || !navigator.onLine) {
+        try {
+          const cachedResponse = await caches.match('/api/items?type=RAW_MATERIAL')
+          if (cachedResponse) {
+            const cachedData = await cachedResponse.json()
+            setItems(Array.isArray(cachedData) ? cachedData : [])
+            setLoading(false)
+            return
+          }
+        } catch (cacheError) {
+          console.log('No cached data available')
+        }
+      }
       setItems([]) // Set to empty array on error
     } finally {
       setLoading(false)

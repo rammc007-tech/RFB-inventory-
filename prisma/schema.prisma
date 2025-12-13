@@ -214,14 +214,16 @@ model ProductionItem {
 }
 
 model ShopSettings {
-  id          String   @id @default(cuid())
-  name        String   @default("RISHA FOODS AND BAKERY")
-  shortForm   String   @default("RFB")
-  address     String   @default("Server No: 103/1A2, Agaramel, Poonamallee Taluk, Chennai - 600123")
-  email       String   @default("rishafoodsandbakery@gmail.com")
-  logoUrl     String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                  String    @id @default(cuid())
+  name                String    @default("RISHA FOODS AND BAKERY")
+  shortForm           String    @default("RFB")
+  address             String    @default("Server No: 103/1A2, Agaramel, Poonamallee Taluk, Chennai - 600123")
+  email               String    @default("rishafoodsandbakery@gmail.com")
+  logoUrl             String?
+  lastInventoryReset  DateTime?
+  lastInventoryValue  Float?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 }
 
 model SyncQueue {
